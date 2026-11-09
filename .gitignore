@@ -1,0 +1,80 @@
+# 运行时数据（绝对不要提交）
+wsp-data/
+data/
+*.db
+*.db-shm
+*.db-wal
+.keyfile
+
+# 模型权重
+*.safetensors
+*.gguf
+*.bin
+*.pt
+*.pth
+*.onnx
+models/
+
+# 编辑产物
+workdir/
+revisions/
+edits/
+*.npz
+
+# 凭据
+.env
+.env.*
+*.key
+*.pem
+credentials*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 虚拟环境
+.venv/
+venv/
+ENV/
+env/
+
+# 测试与工具缓存
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 日志
+*.log
