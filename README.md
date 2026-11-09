@@ -347,5 +347,4 @@ wsp-studio/
 
 ## 许可证
 
-MIT
-
+MIT协议
