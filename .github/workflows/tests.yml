@@ -1,0 +1,62 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Check no machine-specific paths
+        if: runner.os == 'Linux'
+        run: |
+          if grep -rn 'C:\\Users\|/home/[a-z]' wsp/ --include='*.py' --include='*.html'; then
+            echo "::error::发现机器特定路径"
+            exit 1
+          fi
+
+      - name: Check no leaked secrets
+        if: runner.os == 'Linux'
+        run: |
+          if grep -rniE 'sk-[a-zA-Z0-9]{20,}' wsp/ --include='*.py' --include='*.html'; then
+            echo "::error::发现疑似 API Key"
+            exit 1
+          fi
+
+  lint-imports:
+    name: Import check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: |
+          pip install -e .
+          python -c "import wsp, wsp.api.app, wsp.cli, wsp.service, wsp.platform"
