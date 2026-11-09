@@ -347,17 +347,5 @@ wsp-studio/
 
 ## 许可证
 
-[MIT](LICENSE) © 2026 WSP Studio contributors
-
-### 关于"不许商业化"
-
-这个项目采用 MIT —— 它**允许**商业使用。选 MIT 的理由：
-
-- 同领域项目（wsp-kit、OpenWSP、di37 的 skill）都用 MIT
-- MIT 能被所有包管理器、镜像站、awesome 列表正常收录
-- 如果你想限制商业使用，可以换成
-  [PolyForm Noncommercial](https://polyformproject.org/licenses/noncommercial/1.0.0/)，
-  但那样它就不再是 OSI 认可的开源软件
-
-如果你想加商业限制，改 `LICENSE` 即可 —— 代码里没有任何地方依赖许可证类型。
+MIT
 
