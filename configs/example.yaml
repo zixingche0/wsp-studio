@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "llm": {
+    "base_url": "https://api.openai.com/v1",
+    "api_key_env": "WSP_LLM_API_KEY",
+    "model": "gpt-4o-mini",
+    "temperature": 0.2
+  },
+  "storage": {
+    "home_env": "WSP_HOME",
+    "default_home": "../wsp-data"
+  },
+  "edit": {
+    "max_weight_fraction": 0.01,
+    "default_dry_run": true,
+    "norm_preserve": true
+  },
+  "eval_gate": {
+    "primary": "math_short",
+    "guards": ["ifeval_mini"],
+    "tasks": ["math_short", "ifeval_mini", "loop_mini"],
+    "min_delta": 0.05,
+    "delta_unit": "absolute",
+    "max_regression": 0.03,
+    "regression_unit": "absolute",
+    "ppl_worsen_ratio": 1.10
+  },
+  "probe": {
+    "default_tasks": ["math_short", "ifeval_mini", "loop_mini", "gen_basic"],
+    "sampling": {
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "max_tokens": 128,
+      "thinking": false
+    }
+  },
+  "lmstudio": {
+    "default_endpoint": "http://127.0.0.1:1234/v1",
+    "models_root_hint": "F:/ai model"
+  }
+}
