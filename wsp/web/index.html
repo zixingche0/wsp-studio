@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WSP Studio</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#161a21; --panel2:#1d222b; --line:#272d38;
+    --text:#e6e9ef; --dim:#8b94a3; --acc:#5b9cf8; --ok:#3fbf7f;
+    --warn:#e0a33e; --err:#e05a5a; --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,
+    "Segoe UI","Microsoft YaHei",sans-serif; display:flex; flex-direction:column;
+  }
+  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel2);
+    color:var(--text);padding:6px 12px;border-radius:8px}
+  button:hover{border-color:var(--acc)}
+  button.primary{background:var(--acc);border-color:var(--acc);color:#08111f;font-weight:600}
+  button.danger{border-color:var(--err);color:var(--err)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  input,textarea,select{font:inherit;background:var(--panel);color:var(--text);
+    border:1px solid var(--line);border-radius:8px;padding:7px 10px;width:100%}
+  textarea{resize:vertical}
+  a{color:var(--acc)}
+
+  header{display:flex;align-items:center;gap:12px;padding:10px 16px;
+    border-bottom:1px solid var(--line);background:var(--panel)}
+  header h1{font-size:15px;margin:0;font-weight:600;letter-spacing:.3px}
+  header .spacer{flex:1}
+  .badge{font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);
+    color:var(--dim)}
+  .badge.on{color:var(--ok);border-color:rgba(63,191,127,.4)}
+  .badge.off{color:var(--err);border-color:rgba(224,90,90,.4)}
+
+  main{flex:1;display:flex;min-height:0}
+  aside{width:260px;border-right:1px solid var(--line);background:var(--panel);
+    display:flex;flex-direction:column;overflow:hidden}
+  aside section{padding:10px 12px;border-bottom:1px solid var(--line)}
+  aside h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--dim);margin:0 0 8px}
+  .list{overflow:auto;flex:1}
+  .item{padding:7px 10px;border-radius:8px;cursor:pointer;display:flex;
+    align-items:center;gap:6px;font-size:13px}
+  .item:hover{background:var(--panel2)}
+  .item.active{background:rgba(91,156,248,.15);color:var(--acc)}
+  .item .dot{width:6px;height:6px;border-radius:50%;background:var(--dim);flex:none}
+  .item .dot.edit{background:var(--ok)}
+  .item .dot.ro{background:var(--warn)}
+
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .chat{flex:1;overflow:auto;padding:18px 22px;display:flex;flex-direction:column;gap:12px}
+  .msg{max-width:min(760px,92%);padding:10px 14px;border-radius:var(--radius);
+    white-space:pre-wrap;word-break:break-word}
+  .msg.user{align-self:flex-end;background:rgba(91,156,248,.16);
+    border:1px solid rgba(91,156,248,.3)}
+  .msg.assistant{align-self:flex-start;background:var(--panel);border:1px solid var(--line)}
+  .msg.tool{align-self:flex-start;background:var(--panel2);border:1px dashed var(--line);
+    color:var(--dim);font-size:12px;font-family:ui-monospace,Consolas,monospace;
+    max-height:220px;overflow:auto}
+
+  .card{align-self:flex-start;max-width:min(760px,92%);background:var(--panel);
+    border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .card header{padding:9px 14px;background:var(--panel2);border-bottom:1px solid var(--line);
+    font-size:12px;color:var(--dim);display:flex;align-items:center;gap:8px}
+  .card .body{padding:12px 14px;font-size:13px}
+  .card .body pre{margin:0;font-family:ui-monospace,Consolas,monospace;font-size:12px;
+    white-space:pre-wrap;max-height:260px;overflow:auto}
+  .card.ok{border-color:rgba(63,191,127,.45)}
+  .card.fail{border-color:rgba(224,90,90,.45)}
+  .card.warn{border-color:rgba(224,163,62,.45)}
+  .card .actions{padding:9px 14px;border-top:1px solid var(--line);display:flex;gap:8px}
+
+  .composer{border-top:1px solid var(--line);padding:12px 16px;background:var(--panel)}
+  .composer .row{display:flex;gap:8px;align-items:flex-end}
+  .composer textarea{min-height:46px;max-height:180px}
+
+  dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);
+    color:var(--text);padding:0;width:min(680px,92vw)}
+  dialog::backdrop{background:rgba(0,0,0,.55)}
+  dialog .body{padding:16px 18px;display:flex;flex-direction:column;gap:12px;
+    max-height:74vh;overflow:auto}
+  dialog header{padding:13px 18px;border-bottom:1px solid var(--line);
+    background:var(--panel2);font-weight:600;font-size:14px;color:var(--text)}
+  dialog footer{padding:12px 18px;border-top:1px solid var(--line);display:flex;
+    gap:8px;justify-content:flex-end}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field label{font-size:12px;color:var(--dim)}
+  .hint{font-size:11px;color:var(--dim)}
+  .kv{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;font-size:12px}
+  .kv .k{color:var(--dim)}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:500}
+  .spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line);
+    border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .empty{color:var(--dim);text-align:center;padding:40px 20px;font-size:13px}
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
+    background:var(--panel2);border:1px solid var(--line);padding:9px 16px;
+    border-radius:8px;font-size:13px;z-index:99}
+  .toast.err{border-color:var(--err);color:var(--err)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>WSP Studio</h1>
+  <span class="badge" id="modelBadge">未选模型</span>
+  <span class="spacer"></span>
+  <span class="badge" id="llmBadge">LLM 未配置</span>
+  <button onclick="openSettings()">设置</button>
+  <button onclick="openModels()">模型</button>
+</header>
+
+<main>
+  <aside>
+    <section>
+      <h2>项目</h2>
+      <div id="projectList" class="list" style="max-height:180px"></div>
+      <button style="margin-top:8px;width:100%" onclick="newProject()">＋ 新建项目</button>
+    </section>
+    <section style="flex:1;display:flex;flex-direction:column;min-height:0;border-bottom:none">
+      <h2>对话</h2>
+      <div id="convList" class="list"></div>
+      <button style="margin-top:8px;width:100%" onclick="newConversation()">＋ 新对话</button>
+    </section>
+  </aside>
+
+  <div class="main">
+    <div class="chat" id="chat">
+      <div class="empty">选择或新建一个项目开始。<br>直接用中文说出你的需求，例如：<br>
+        “这个模型做数学题老是重复，帮我看看能不能修。”</div>
+    </div>
+    <div class="composer">
+      <div class="row">
+        <textarea id="input" placeholder="告诉大模型你想做什么…（Enter 发送，Shift+Enter 换行）"></textarea>
+        <button class="primary" id="sendBtn" onclick="send()">发送</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 设置 -->
+<dialog id="settingsDlg">
+  <header>LLM 设置</header>
+  <div class="body">
+    <div class="field">
+      <label>Base URL（OpenAI 兼容）</label>
+      <input id="setBaseUrl" placeholder="https://api.openai.com/v1" />
+      <div class="hint" id="endpointHint">也可以填本地服务，点下面按钮自动检测</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px" id="quickEndpoints"></div>
+    </div>
+    <div class="field">
+      <label>API Key</label>
+      <input id="setApiKey" type="password" placeholder="sk-…（留空则不修改）" />
+      <div class="hint" id="keyHint"></div>
+    </div>
+    <div class="field">
+      <label>模型名</label>
+      <input id="setModel" placeholder="gpt-4o-mini" />
+    </div>
+    <div class="field">
+      <label>温度</label>
+      <input id="setTemp" type="number" step="0.1" min="0" max="2" value="0.2" />
+    </div>
+    <div id="testResult" class="hint"></div>
+  </div>
+  <footer>
+    <button onclick="testLLM()">测试连接</button>
+    <button onclick="document.getElementById('settingsDlg').close()">取消</button>
+    <button class="primary" onclick="saveLLM()">保存</button>
+  </footer>
+</dialog>
+
+<!-- 模型 -->
+<dialog id="modelsDlg">
+  <header>模型</header>
+  <div class="body">
+    <div id="modelTable"></div>
+    <div class="field" style="margin-top:8px">
+      <label>导入 safetensors 目录</label>
+      <div style="display:flex;gap:8px">
+        <input id="importPath" placeholder="例如 ~/models/Qwen3.5-0.8B 或 D:\models\Llama-3.2-1B" />
+        <button onclick="importModel()">导入</button>
+      </div>
+      <div class="hint">只有 safetensors 才能编辑权重；GGUF 只能用于探测。</div>
+    </div>
+    <div class="field">
+      <button onclick="scanModels()" style="width:100%">扫描本机所有模型来源</button>
+    </div>
+    <div id="scanBox"></div>
+    <div id="sourcesBar" class="hint"></div>
+  </div>
+  <footer>
+    <button onclick="document.getElementById('modelsDlg').close()">关闭</button>
+  </footer>
+</dialog>
+
+<div id="toast"></div>
+
+<script>
+const API = "/api";
+let state = {
+  projects: [], models: [], project: null,
+  conversations: [], conversation: null, messages: [],
+};
+
+// ---------- 工具 ----------
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, {
+    headers: { "Content-Type": "application/json" },
+    ...opts,
+  });
+  let data = null;
+  try { data = await res.json(); } catch (e) { data = { detail: "响应不是 JSON" }; }
+  if (!res.ok) throw new Error(data.detail || data.error || `HTTP ${res.status}`);
+  return data;
+}
+function toast(msg, isErr) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = "toast" + (isErr ? " err" : "");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = "toast"; el.textContent = ""; }, 3600);
+}
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// ---------- 初始化 ----------
+async function boot() {
+  await refreshModels();
+  await refreshProjects();
+  await refreshLLMBadge();
+  await checkOnboarding();
+}
+
+async function checkOnboarding() {
+  try {
+    const d = await api("/onboarding");
+    const s = d.summary || {};
+    if (s.can_edit && s.can_evaluate) return;
+
+    // 能编辑但不能评估：只提示，不打断
+    if (s.can_edit && !s.can_evaluate) {
+      const runtime = (d.steps || []).find(x => x.key === "runtime");
+      if (runtime && runtime.status !== "done") {
+        addCard("可以编辑，但还不能评估",
+          `<div class="hint">${esc(runtime.detail)}</div>
+           ${(runtime.commands || []).map(c =>
+             `<pre style="margin:6px 0 0;background:var(--panel2);padding:6px 8px;
+               border-radius:6px;font-size:11px">${esc(c)}</pre>`).join("")}`, "warn");
+      }
+      return;
+    }
+
+    const steps = (d.steps || []).filter(x => x.status === "todo" || x.status === "blocked");
+    if (!steps.length) return;
+    const rows = steps.map(s => `
+      <div style="margin-bottom:10px">
+        <div><b>${esc(s.title)}</b></div>
+        <div class="hint">${esc(s.detail)}</div>
+        ${(s.commands || []).map(c =>
+          `<pre style="margin:4px 0 0;background:var(--panel2);padding:6px 8px;
+            border-radius:6px;font-size:11px">${esc(c)}</pre>`).join("")}
+      </div>`).join("");
+    addCard("还差几步就能开始",
+      `${rows}
+       <div class="hint" style="margin-top:8px">
+       推荐模型：${(d.recommended_models || []).filter(m => m.feasible).slice(0, 2)
+         .map(m => `${esc(m.id)} (${m.size_gb}GB)`).join("、") || "无"}
+       </div>`, "warn", [
+        { label: "去配置 LLM", fn: () => openSettings() },
+        { label: "去导入模型", fn: () => openModels() },
+      ]);
+  } catch (e) { /* 引导失败不阻塞使用 */ }
+}
+
+async function refreshLLMBadge() {
+  try {
+    const cfg = await api("/settings/llm");
+    const el = document.getElementById("llmBadge");
+    if (cfg.api_key_set) {
+      el.textContent = `LLM: ${cfg.model}`;
+      el.className = "badge on";
+      document.getElementById("setBaseUrl").value = cfg.base_url || "";
+      document.getElementById("setModel").value = cfg.model || "";
+      document.getElementById("setTemp").value = cfg.temperature ?? 0.2;
+      document.getElementById("keyHint").textContent =
+        `已保存：${cfg.api_key_masked}（${cfg.encryption} 加密，${cfg.source}）`;
+    } else {
+      el.textContent = "LLM 未配置";
+      el.className = "badge off";
+      document.getElementById("keyHint").textContent = "尚未保存 API Key。";
+    }
+  } catch (e) { /* ignore */ }
+}
+
+async function refreshModels() {
+  const data = await api("/models");
+  state.models = data.models || [];
+  renderModels();
+}
+
+async function refreshProjects() {
+  const data = await api("/projects");
+  state.projects = data.projects || [];
+  renderProjects();
+}
+
+// ---------- 渲染 ----------
+function renderProjects() {
+  const box = document.getElementById("projectList");
+  if (!state.projects.length) {
+    box.innerHTML = '<div class="item" style="color:var(--dim)">还没有项目</div>';
+    return;
+  }
+  box.innerHTML = state.projects.map(p => `
+    <div class="item ${state.project?.id === p.id ? "active" : ""}"
+         onclick="selectProject('${p.id}')">
+      <span class="dot"></span><span>${esc(p.name)}</span>
+    </div>`).join("");
+}
+
+function renderModels() {
+  const box = document.getElementById("modelTable");
+  if (!state.models.length) {
+    box.innerHTML = '<div class="hint">还没有注册模型。用下面的输入框导入。</div>';
+  } else {
+    box.innerHTML = `<table><tr><th>模型</th><th>能力</th><th>层</th><th>大小</th></tr>
+      ${state.models.map(m => `<tr>
+        <td>${esc(m.name)}</td>
+        <td>${m.can_edit ? '<span class="badge on">可编辑</span>' : ''}
+            ${m.can_probe ? '<span class="badge">可探测</span>' : ''}</td>
+        <td>${m.num_layers || "-"}</td>
+        <td>${m.total_bytes ? (m.total_bytes / 1073741824).toFixed(2) + " GB" : "-"}</td>
+      </tr>`).join("")}</table>`;
+    const cur = state.models.find(m => m.id === state.project?.model_id);
+    const badge = document.getElementById("modelBadge");
+    if (cur) {
+      badge.textContent = `${cur.name} · ${cur.can_edit ? "可编辑" : "只读"}`;
+      badge.className = "badge " + (cur.can_edit ? "on" : "off");
+    }
+  }
+  const lm = document.getElementById("sourcesBar");
+  api("/models/sources").then(d => {
+    const list = (d.sources || []).map(s =>
+      `<span class="badge ${s.available ? "on" : ""}">${esc(s.label)}${
+        s.available && s.found ? " · " + s.found : ""}</span>`).join(" ");
+    lm.innerHTML = `模型来源：${list || "无"}`;
+  }).catch(() => {});
+}
+
+async function renderConversations() {
+  if (!state.project) { document.getElementById("convList").innerHTML = ""; return; }
+  const data = await api(`/projects/${state.project.id}/conversations`);
+  state.conversations = data.conversations || [];
+  document.getElementById("convList").innerHTML = state.conversations.length
+    ? state.conversations.map(c => `
+        <div class="item ${state.conversation?.id === c.id ? "active" : ""}"
+             onclick="selectConversation('${c.id}')">
+          <span>${esc(c.title || "新对话")}</span>
+        </div>`).join("")
+    : '<div class="item" style="color:var(--dim)">还没有对话</div>';
+}
+
+// ---------- 交互 ----------
+async function selectProject(id) {
+  state.project = state.projects.find(p => p.id === id) || null;
+  state.conversation = null;
+  state.messages = [];
+  renderProjects(); renderModels();
+  await renderConversations();
+  document.getElementById("chat").innerHTML =
+    '<div class="empty">开始对话吧。直接说你想对这个模型做什么。</div>';
+}
+
+async function selectConversation(id) {
+  state.conversation = state.conversations.find(c => c.id === id) || null;
+  await renderConversations();
+  await loadMessages();
+}
+
+async function loadMessages() {
+  if (!state.conversation) return;
+  const data = await api(`/conversations/${state.conversation.id}/messages`);
+  state.messages = data.messages || [];
+  const chat = document.getElementById("chat");
+  chat.innerHTML = "";
+  for (const m of state.messages) addMessageEl(m.role, m.content);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addMessageEl(role, content) {
+  const chat = document.getElementById("chat");
+  const div = document.createElement("div");
+  div.className = "msg " + (role === "tool" ? "tool" : role);
+  div.textContent = content;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+function addCard(title, bodyHtml, cls = "", actions = []) {
+  const chat = document.getElementById("chat");
+  const card = document.createElement("div");
+  card.className = "card " + cls;
+  card.innerHTML = `<header>${esc(title)}</header>
+    <div class="body">${bodyHtml}</div>
+    ${actions.length ? `<div class="actions"></div>` : ""}`;
+  if (actions.length) {
+    const bar = card.querySelector(".actions");
+    actions.forEach(a => {
+      const b = document.createElement("button");
+      b.textContent = a.label;
+      if (a.cls) b.className = a.cls;
+      b.onclick = () => a.fn(b);
+      bar.appendChild(b);
+    });
+  }
+  chat.appendChild(card);
+  chat.scrollTop = chat.scrollHeight;
+  return card;
+}
+
+async function newProject() {
+  if (!state.models.length) { toast("请先在“模型”里导入一个 safetensors 模型", true); return; }
+  const name = prompt("项目名称：", "修复重复循环");
+  if (!name) return;
+  const modelId = prompt("模型 id：", state.models[0].id);
+  if (!modelId) return;
+  const goal = prompt("目标（可留空）：", "修复数学推理中的重复循环") || "";
+  try {
+    const p = await api("/projects", {
+      method: "POST",
+      body: JSON.stringify({ name, model_id: modelId, goal }),
+    });
+    await refreshProjects();
+    await selectProject(p.id);
+  } catch (e) { toast(e.message, true); }
+}
+
+async function newConversation() {
+  if (!state.project) { toast("先选一个项目", true); return; }
+  const title = prompt("对话标题：", "诊断与编辑") || "新对话";
+  try {
+    const c = await api("/conversations", {
+      method: "POST",
+      body: JSON.stringify({ project_id: state.project.id, title }),
+    });
+    await renderConversations();
+    await selectConversation(c.id);
+  } catch (e) { toast(e.message, true); }
+}
+
+// ---------- 发送 ----------
+async function send() {
+  const input = document.getElementById("input");
+  const text = input.value.trim();
+  if (!text) return;
+  if (!state.conversation) { toast("先新建一个对话", true); return; }
+  const btn = document.getElementById("sendBtn");
+  input.value = ""; input.style.height = "auto";
+  addMessageEl("user", text);
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>';
+  const chat = document.getElementById("chat");
+
+  const thinking = document.createElement("div");
+  thinking.className = "msg assistant";
+  thinking.innerHTML = '<span class="spin"></span> 思考中…';
+  chat.appendChild(thinking); chat.scrollTop = chat.scrollHeight;
+
+  try {
+    const run = await api(`/conversations/${state.conversation.id}/chat`, {
+      method: "POST", body: JSON.stringify({ content: text }),
+    });
+    thinking.remove();
+    renderRun(run);
+  } catch (e) {
+    thinking.remove();
+    addMessageEl("assistant", "出错了：" + e.message);
+    toast(e.message, true);
+  } finally {
+    btn.disabled = false; btn.textContent = "发送";
+  }
+}
+
+function renderRun(run) {
+  for (const ev of run.events || []) {
+    const d = ev.data || {};
+    if (ev.kind === "text") addMessageEl("assistant", d.content);
+    else if (ev.kind === "tool_call") {
+      addCard("调用工具 · " + d.name,
+        `<pre>${esc(JSON.stringify(d.arguments, null, 2))}</pre>`, "warn");
+    } else if (ev.kind === "tool_result") {
+      addCard((d.ok ? "✓ " : "✗ ") + d.name,
+        `<pre>${esc(d.summary || "")}</pre>`, d.ok ? "ok" : "fail");
+    } else if (ev.kind === "plan") {
+      addCard("编辑计划已生成", `<div>${esc(d.summary || "")}</div>
+        <div class="hint">plan_id: ${esc(d.plan_id)}</div>`, "ok", [
+        { label: "干跑预览", fn: () => dryRun(d.plan_id) },
+        { label: "查看 JSON", fn: () => viewPlan(d.plan_id) },
+      ]);
+    } else if (ev.kind === "error") {
+      addCard("错误", `<pre>${esc(d.message)}</pre>`, "fail");
+    }
+  }
+  if (run.error) toast(run.error, true);
+}
+
+async function viewPlan(planId) {
+  try {
+    const p = await api(`/plans/${planId}`);
+    addCard("计划 JSON", `<pre>${esc(JSON.stringify(p.plan, null, 2))}</pre>`);
+  } catch (e) { toast(e.message, true); }
+}
+
+async function dryRun(planId) {
+  try {
+    const out = await api(`/plans/${planId}/apply`, {
+      method: "POST", body: JSON.stringify({ dry_run: true }),
+    });
+    const r = out.result;
+    const rows = (r.outcomes || []).map(o => `<tr>
+      <td>${esc((o.tensor_name || "").split(".").slice(-4).join("."))}</td>
+      <td>${o.stats?.changed_entries ?? 0}</td>
+      <td>${o.stats?.changed_rows ?? 0} × ${o.stats?.changed_cols ?? 0}</td>
+      <td>${(o.stats?.relative_norm_change ?? 0).toExponential(2)}</td>
+      <td>${o.error ? esc(o.error) : "✓"}</td></tr>`).join("");
+    addCard("干跑结果（未写入任何文件）",
+      `<div class="kv">
+        <span class="k">会改动的权重</span><span>${r.total_changed.toLocaleString()}</span>
+        <span class="k">占模型比例</span><span>${(r.model_fraction * 100).toFixed(6)}%</span>
+        <span class="k">状态</span><span>${r.ok ? "可执行" : "有问题"}</span>
+      </div>
+      <table style="margin-top:10px"><tr><th>张量</th><th>改动元素</th>
+        <th>行×列</th><th>范数变化</th><th></th></tr>${rows}</table>`,
+      r.ok ? "ok" : "fail",
+      r.ok ? [{ label: "应用（会写新 checkpoint）", cls: "primary",
+                fn: (b) => applyNow(planId, b) }] : []);
+  } catch (e) {
+    addCard("干跑失败", `<pre>${esc(e.message)}</pre>`, "fail");
+  }
+}
+
+async function applyNow(planId, btn) {
+  if (!confirm("确认应用？会写出新的 checkpoint，原始模型目录不会被修改。")) return;
+  btn.disabled = true; btn.textContent = "应用中…";
+  try {
+    const out = await api(`/plans/${planId}/apply`, {
+      method: "POST", body: JSON.stringify({ dry_run: false }),
+    });
+    const editId = out.edit?.id;
+    addCard("已应用", `<div class="kv">
+      <span class="k">edit_id</span><span>${esc(editId)}</span>
+      <span class="k">改动权重</span><span>${(out.result.total_changed || 0).toLocaleString()}</span>
+      <span class="k">checkpoint</span><span>${esc(out.checkpoint || "")}</span>
+    </div>`, "ok", editId ? [
+      { label: "运行评估门控", cls: "primary", fn: (b) => runEval(editId, b) },
+      { label: "回滚", cls: "danger", fn: () => rollback(editId) },
+    ] : []);
+    btn.textContent = "已应用"; 
+  } catch (e) {
+    btn.disabled = false; btn.textContent = "重试";
+    addCard("应用失败", `<pre>${esc(e.message)}</pre>`, "fail");
+  }
+}
+
+async function runEval(editId, btn) {
+  btn.disabled = true; btn.textContent = "评估中…";
+  try {
+    const out = await api("/evals/run", {
+      method: "POST", body: JSON.stringify({ edit_id: editId }),
+    });
+    const g = out.gate;
+    const before = Object.entries(out.before || {})
+      .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${(v*100).toFixed(1)}%</td>
+        <td>${((out.after[k]??0)*100).toFixed(1)}%</td>
+        <td>${(((out.after[k]??0)-v)*100).toFixed(1)} pt</td></tr>`).join("");
+    addCard(out.passed ? "✓ 门控通过" : "✗ 门控未通过（已回滚）",
+      `<table><tr><th>指标</th><th>编辑前</th><th>编辑后</th><th>变化</th></tr>${before}</table>
+       ${g.reasons?.length ? `<div class="hint" style="margin-top:8px">${esc(g.reasons.join("；"))}</div>` : ""}`,
+      out.passed ? "ok" : "fail");
+    btn.textContent = "已评估";
+  } catch (e) {
+    btn.disabled = false; btn.textContent = "重试";
+    addCard("评估失败", `<pre>${esc(e.message)}</pre>`, "fail");
+  }
+}
+
+async function rollback(editId) {
+  if (!confirm("确认回滚？会删除新 checkpoint，并按 base_sha256 校验原始权重。")) return;
+  try {
+    const out = await api("/rollback", {
+      method: "POST", body: JSON.stringify({ edit_id: editId }),
+    });
+    addCard("已回滚", `<div class="kv">
+      <span class="k">edit_id</span><span>${esc(editId)}</span>
+      <span class="k">校验通过的张量</span><span>${(out.verified_tensors || []).length}</span>
+    </div>`, "ok");
+  } catch (e) { toast(e.message, true); }
+}
+
+// ---------- 设置 ----------
+async function openSettings() {
+  await refreshLLMBadge();
+  await loadQuickEndpoints();
+  document.getElementById("settingsDlg").showModal();
+}
+
+async function loadQuickEndpoints() {
+  const box = document.getElementById("quickEndpoints");
+  try {
+    const d = await api("/models/discover");
+    const up = (d.services || []).filter(s => s.reachable);
+    if (!up.length) {
+      box.innerHTML = '<span class="hint">没有检测到运行中的本地服务</span>';
+      return;
+    }
+    box.innerHTML = up.map(s =>
+      `<button onclick="pickEndpoint('${esc(s.base_url)}','${esc(s.models?.[0] || "")}')">
+        ${esc(s.name)}${s.models?.length ? " · " + esc(s.models[0]) : ""}</button>`
+    ).join("");
+  } catch (e) {
+    box.innerHTML = "";
+  }
+}
+
+function pickEndpoint(url, model) {
+  document.getElementById("setBaseUrl").value = url;
+  if (model) document.getElementById("setModel").value = model;
+  document.getElementById("endpointHint").textContent =
+    "已填入本地服务，API Key 可留空";
+}
+async function saveLLM() {
+  const body = {
+    base_url: document.getElementById("setBaseUrl").value.trim() || null,
+    model: document.getElementById("setModel").value.trim() || null,
+    temperature: parseFloat(document.getElementById("setTemp").value || "0.2"),
+  };
+  const key = document.getElementById("setApiKey").value.trim();
+  if (key) body.api_key = key;
+  try {
+    await api("/settings/llm", { method: "PUT", body: JSON.stringify(body) });
+    document.getElementById("setApiKey").value = "";
+    toast("已保存");
+    await refreshLLMBadge();
+    document.getElementById("settingsDlg").close();
+  } catch (e) { toast(e.message, true); }
+}
+async function testLLM() {
+  const el = document.getElementById("testResult");
+  el.innerHTML = '<span class="spin"></span> 测试中…';
+  try {
+    const r = await api("/settings/llm/test", { method: "POST" });
+    el.textContent = r.ok
+      ? `✓ 连接正常，延迟 ${r.latency_s}s，回复：${r.reply}`
+      : `✗ ${r.error}`;
+  } catch (e) { el.textContent = "✗ " + e.message; }
+}
+
+// ---------- 模型 ----------
+async function openModels() {
+  renderModels();
+  document.getElementById("modelsDlg").showModal();
+}
+
+async function scanModels() {
+  const box = document.getElementById("scanBox");
+  box.innerHTML = '<div class="hint"><span class="spin"></span> 扫描中…（可能要几秒）</div>';
+  try {
+    const d = await api("/models/discover");
+    if (!d.count) {
+      box.innerHTML = `<div class="hint">没有发现模型。<br>已知搜索目录：<br>
+        ${(d.roots || []).map(r => "· " + esc(r.path)).join("<br>") || "（无）"}</div>`;
+      return;
+    }
+    const rows = d.models.map(m => `<tr>
+      <td title="${esc(m.path)}">${esc(m.name)}</td>
+      <td><span class="badge">${esc(m.source)}</span></td>
+      <td>${m.size_gb ? m.size_gb + " GB" : "-"}</td>
+      <td>${m.editable ? '<span class="badge on">可编辑</span>' : '<span class="badge off">只读</span>'}</td>
+      <td>${m.editable
+        ? `<button onclick="quickImport('${esc(m.path).replace(/\\/g, "\\\\")}')">导入</button>`
+        : ""}</td>
+    </tr>`).join("");
+    const svc = (d.services || []).filter(s => s.reachable)
+      .map(s => `${s.name}（${s.base_url}）`).join("、") || "无";
+    const srcRows = (d.sources || []).map(s =>
+      `<tr><td>${esc(s.label)}</td><td>${s.available ? "可用" : "未检测到"}</td>
+       <td>${s.found || 0}</td></tr>`).join("");
+    box.innerHTML = `<table><tr><th>模型</th><th>来源</th><th>大小</th>
+      <th>能力</th><th></th></tr>${rows}</table>
+      <details style="margin-top:10px"><summary class="hint" style="cursor:pointer">
+        扫描的来源（点击展开）</summary>
+        <table style="margin-top:6px"><tr><th>来源</th><th>状态</th><th>数量</th></tr>
+        ${srcRows}</table></details>
+      <div class="hint" style="margin-top:8px">
+        运行中的推理服务：${esc(svc)}<br>
+        共 ${d.count} 个模型。只有 safetensors 目录可以导入编辑。
+      </div>`;
+  } catch (e) {
+    box.innerHTML = `<div class="hint" style="color:var(--err)">扫描失败：${esc(e.message)}</div>`;
+  }
+}
+
+async function quickImport(path) {
+  document.getElementById("importPath").value = path;
+  await importModel();
+}
+async function importModel() {
+  const path = document.getElementById("importPath").value.trim();
+  if (!path) return;
+  try {
+    const m = await api("/models/import", {
+      method: "POST", body: JSON.stringify({ path }),
+    });
+    toast(`已导入 ${m.name}`);
+    await refreshModels();
+    document.getElementById("importPath").value = "";
+  } catch (e) { toast(e.message, true); }
+}
+
+// ---------- 输入框行为 ----------
+const inputEl = document.getElementById("input");
+inputEl.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+});
+inputEl.addEventListener("input", () => {
+  inputEl.style.height = "auto";
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 180) + "px";
+});
+
+boot().catch(e => toast(e.message, true));
+</script>
+</body>
+</html>
